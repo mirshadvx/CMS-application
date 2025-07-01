@@ -1,5 +1,5 @@
 # Frontend
-Client/node_modules/
+Client/cms_frontend/node_modules/
 Client/.env
 Client/build/
 
