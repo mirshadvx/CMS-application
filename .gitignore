@@ -1,6 +1,6 @@
 # Frontend
 Client/cms_frontend/node_modules/
-Client/.env
+Client/cms_frontend/.env
 Client/build/
 
 # Backend

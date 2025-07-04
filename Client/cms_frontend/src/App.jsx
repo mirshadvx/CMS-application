@@ -1,10 +1,17 @@
-import "./App.css";
+import Login from "./Components/user/auth/Login";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import auth from "./routes/user/auth";
+import UserRoutes from "./routes/user/userRoutes";
 
 function App() {
     return (
-        <>
-            <div className="bg-blue-500 rounded-lg">test</div>
-        </>
+        <BrowserRouter>
+            <Routes>
+               {auth()}
+               {UserRoutes()}
+               <Route path="*" element={<div>404 Not Found</div>} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 

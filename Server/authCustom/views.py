@@ -2,8 +2,10 @@ from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
+from rest_framework.views import APIView
+from .serializers import RegisterSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -36,7 +38,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             
             return res
         except Exception as e:
-            return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, 'message': "No active account found this information"}, status=status.HTTP_400_BAD_REQUEST)
         
 class customTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
@@ -60,7 +62,7 @@ class customTokenRefreshView(TokenRefreshView):
             
             return res
         except Exception as e:
-            return Response({'refreshed': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'refreshed': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 @api_view(['POST'])
 def logout(request):
@@ -76,3 +78,12 @@ def logout(request):
 @permission_classes([IsAuthenticated])
 def is_authenticated(request):
     return Response({'authenticated': True}, status=status.HTTP_200_OK) if request.user.is_authenticated else Response({'authenticated': False}, status=status.HTTP_401_UNAUTHORIZED)
+
+@permission_classes([AllowAny])
+class RegisterView(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "User resistered successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_REQUEST)
