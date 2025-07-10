@@ -22,7 +22,7 @@ const Navbar = ({ setShowSignIn, setShowSignUp }) => {
             <nav className="bg-[#f0f0e8] shadow-md relative z-50">
                 <div className="container flex justify-between items-center py-4">
                     <div className="text-2xl flex items-center gap-2 font-bold uppercase">
-                        <p className="text-[#5e4a3a] hover:text-[#9aac7f] transition-colors duration-300">Your Logo</p>
+                        <p className="text-[#5e4a3a] hover:text-[#9aac7f] transition-colors duration-300">Logo</p>
                     </div>
 
                     <div className="hidden md:block">
