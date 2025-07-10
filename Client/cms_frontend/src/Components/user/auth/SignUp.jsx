@@ -1,15 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Loader2, X } from "lucide-react";
 import { authAPI } from "../../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import contentApi from "../../../services/content/content";
 
 const SignUp = ({ onClose, onSwitchToSignIn }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
-    const navigate = useNavigate();
+    const [contentCategories, setContentCategories] = useState([]);
+    const [selectedCategories, setSelectedCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
+    const [categoriesError, setCategoriesError] = useState("");
 
     const {
         register,
@@ -19,25 +24,55 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
     } = useForm();
 
     const password = watch("password");
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                setCategoriesLoading(true);
+                const resonse = await contentApi.getCategories();
+                setContentCategories(resonse.data);
+                setCategoriesError("");
+            } catch (error) {
+                console.log(error);
+                const errorMsg = error.response?.data?.error || "Failed to load preferences";
+                setCategoriesError(errorMsg);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    const handleCategoryToggle = (categoryId) => {
+        setSelectedCategories((prev) =>
+            prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId]
+        );
+    };
 
     const onSubmit = async (data) => {
         setIsLoading(true);
         setErrorMessage("");
+        console.log("testtest ",data);
 
         try {
-            const response = await authAPI.register({
+            const registrationData = {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,
                 phoneNumber: data.phoneNumber,
                 dateOfBirth: data.dateOfBirth,
                 password: data.password,
-            });
+                interests: selectedCategories,
+            };
+
+            const response = await authAPI.register(registrationData);
             console.log("Signup Success:", response.data);
+
             onClose();
         } catch (error) {
             console.log(error);
-            const errorMsg = error.response?.data?.message || "Registration failed. Please try again.";
+            const errorMsg =
+                error.response?.data?.message || error.response?.data?.error || "Registration failed. Please try again.";
             setErrorMessage(errorMsg);
             console.error(error);
         } finally {
@@ -203,8 +238,8 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
                                 >
                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
-                                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
                             </div>
+                            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
                         </div>
 
                         <div>
@@ -231,15 +266,38 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
                                 >
                                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
-                                {errors.confirmPassword && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
-                                )}
                             </div>
+                            {errors.confirmPassword && (
+                                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+                            )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Article Preferences</label>
-                            <div className="text-sm text-red-600">Failed to fetch preferences</div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Article Preferences (Optional)
+                            </label>
+                            {categoriesLoading ? (
+                                <div className="flex items-center text-sm text-gray-500">
+                                    <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                                    Loading preferences...
+                                </div>
+                            ) : categoriesError ? (
+                                <div className="text-sm text-red-600">{categoriesError}</div>
+                            ) : (
+                                <div className="space-y-2 max-h-32 overflow-y-auto">
+                                    {contentCategories.map((category) => (
+                                        <label key={category.id} className="flex items-center space-x-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCategories.includes(category.id)}
+                                                onChange={() => handleCategoryToggle(category.id)}
+                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm text-gray-700">{category.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <button

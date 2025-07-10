@@ -79,11 +79,12 @@ def logout(request):
 def is_authenticated(request):
     return Response({'authenticated': True}, status=status.HTTP_200_OK) if request.user.is_authenticated else Response({'authenticated': False}, status=status.HTTP_401_UNAUTHORIZED)
 
-@permission_classes([AllowAny])
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "User resistered successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_REQUEST)
+            return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
