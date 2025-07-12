@@ -6,6 +6,7 @@ Client/build/
 # Backend
 Server/venv/
 server/.env
+Server/logs/
 **/__pycache__
 Server/*.sqlite3
 **/migrations/
