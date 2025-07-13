@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from cms_project.Loggin.logger import logger
 
 class ContentList(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
     
     def get(self, request):

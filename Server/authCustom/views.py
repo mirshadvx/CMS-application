@@ -1,3 +1,4 @@
+from cms_project.Loggin.logger import logger
 from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.response import Response
@@ -5,9 +6,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
     def post(self, request, *args, **kwargs):
         try:
             response = super().post(request, *args, **kwargs)
@@ -38,6 +40,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             
             return res
         except Exception as e:
+            logger.debug(e)
+            print(e)
             return Response({'success': False, 'message': "No active account found this information"}, status=status.HTTP_400_BAD_REQUEST)
         
 class customTokenRefreshView(TokenRefreshView):

@@ -12,6 +12,8 @@ class Profile(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     dateOfBirth = models.DateField(null=True, blank=True)
     interests = models.ManyToManyField(ContentCategory, related_name='interested_users', blank=True)
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
     
     def __str__(self):
         return self.username

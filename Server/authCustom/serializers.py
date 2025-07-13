@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import Profile
 from users.models import ContentCategory
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
@@ -42,3 +46,24 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         user.interests.set(interests)
         return user
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = 'email'
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        if not email or not password:
+            raise serializers.ValidationError("Must include email and password.")
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid credentials.")
+
+        if not user.check_password(password):
+            raise serializers.ValidationError("Invalid credentials.")
+
+        attrs["username"] = user.username
+        return super().validate(attrs)
