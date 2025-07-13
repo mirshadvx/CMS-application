@@ -6,7 +6,7 @@ const userSlice = createSlice({
         isAuthenticated: false,
         role: {
             user: false,
-            admin: true,
+            admin: false,
         },
         loading: false,
         error: null,

@@ -47,13 +47,13 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class customTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         try:
+            refresh_token = request.COOKIES.get('refresh_token')
+            request.data['refresh'] = refresh_token
             response = super().post(request, *args, **kwargs)
             tokens = response.data
-            
             access_token = tokens['access']
-            
             res = Response()
-            res.data = {'refreshed': True, 'access': access_token}
+            res.data = {'refreshed': True}
             
             res.set_cookie(
                 key='access_token',
@@ -66,6 +66,7 @@ class customTokenRefreshView(TokenRefreshView):
             
             return res
         except Exception as e:
+            print(e)
             return Response({'refreshed': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 @api_view(['POST'])

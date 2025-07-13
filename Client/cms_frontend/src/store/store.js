@@ -1,12 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
-import {persistStore, persistReducer} from "redux-persist"
+import { persistStore, persistReducer } from "redux-persist";
 import userReducer from "./userSlice";
-import storage from "redux-persist/lib/storage"
+import storage from "redux-persist/lib/storage";
+import { setApiDispatch } from "../services/api";
 
 const persistConfig = {
     key: "user",
     storage,
-    whitelist: ["role","isAuthenticated"],
+    whitelist: ["role", "isAuthenticated"],
 };
 
 export const store = configureStore({
@@ -22,3 +23,5 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+setApiDispatch(store.dispatch);
