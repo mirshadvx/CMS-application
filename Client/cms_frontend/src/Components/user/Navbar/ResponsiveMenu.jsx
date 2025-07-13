@@ -1,38 +1,21 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NavbarMenu } from "../../../mockData/data";
 
-const ResponsiveMenu = ({ open, setOpen }) => {
-    useEffect(() => {
-        const handleResize = () => {
-            if (window.innerWidth >= 768 && open) {
-                setOpen(false);
-            }
-        };
+const ResponsiveMenu = ({ open, setOpen, onSignInClick, onSignUpClick }) => {
+    const handleMenuItemClick = () => {
+        setOpen(false);
+    };
 
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, [open, setOpen]);
+    const handleSignInClick = () => {
+        onSignInClick();
+        setOpen(false);
+    };
 
-    useEffect(() => {
-        const handleEscape = (e) => {
-            if (e.key === "Escape" && open) {
-                setOpen(false);
-            }
-        };
-
-        if (open) {
-            document.addEventListener("keydown", handleEscape);
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
-        }
-
-        return () => {
-            document.removeEventListener("keydown", handleEscape);
-            document.body.style.overflow = "unset";
-        };
-    }, [open, setOpen]);
+    const handleSignUpClick = () => {
+        onSignUpClick();
+        setOpen(false);
+    };
 
     return (
         <AnimatePresence mode="wait">
@@ -42,61 +25,44 @@ const ResponsiveMenu = ({ open, setOpen }) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -100 }}
                     transition={{ duration: 0.3 }}
-                    className="fixed left-0 w-full h-screen z-40 bg-black bg-opacity-50 md:hidden"
-                    onClick={() => setOpen(false)}
+                    className="absolute left-0 w-full bg-[#f0f0e8] shadow-md z-40 md:hidden rounded-3xl"
                 >
-                    <motion.div
-                        initial={{ y: -100 }}
-                        animate={{ y: 0 }}
-                        exit={{ y: -100 }}
-                        transition={{ duration: 0.3, delay: 0.1 }}
-                        className="bg-[#5e4a3a] text-white py-8 px-8 rounded-b-3xl shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="text-center">
-                     
-
-                            <ul className="flex flex-col gap-4">
-                                {NavbarMenu.map((item, index) => (
-                                    <motion.li
-                                        key={item.id}
-                                        initial={{ opacity: 0, x: -50 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.1 }}
+                    <div className="container py-6">
+                        <ul className="flex flex-col gap-4 mb-6">
+                            {NavbarMenu.map((item) => (
+                                <li key={item.id}>
+                                    <a
+                                        href={item.link}
+                                        onClick={handleMenuItemClick}
+                                        className="block py-2 px-4 text-[#5e4a3a] hover:text-[#9aac7f] 
+                                                 font-semibold transition-all duration-300 hover:bg-[#9aac7f]/10 
+                                                 rounded-lg"
                                     >
-                                        <a
-                                            href={item.link}
-                                            className="block text-xl font-semibold uppercase py-3 px-4 
-                                                     hover:text-[#9aac7f] transition-all duration-300
-                                                     hover:bg-white hover:bg-opacity-10 rounded-lg"
-                                            onClick={() => setOpen(false)}
-                                        >
-                                            {item.title}
-                                        </a>
-                                    </motion.li>
-                                ))}
-                            </ul>
+                                        {item.title}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
 
-                            <div className="mt-8 flex flex-col gap-4">
-                                <button
-                                    className="py-3 px-6 border-2 border-[#9aac7f] text-[#9aac7f] 
-                                             rounded-full hover:bg-[#9aac7f] hover:text-white 
-                                             transition-all duration-300 font-semibold"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    Sign in
-                                </button>
-                                <button
-                                    className="py-3 px-6 bg-[#9aac7f] text-white rounded-full 
-                                             hover:bg-white hover:text-[#5e4a3a] transition-all 
-                                             duration-300 font-semibold shadow-lg"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    Get Started
-                                </button>
-                            </div>
+                        <div className="flex flex-col gap-3 px-4">
+                            <button
+                                onClick={handleSignInClick}
+                                className="w-full py-3 text-[#5e4a3a] hover:text-[#9aac7f] 
+                                         font-semibold transition-all duration-300 hover:bg-[#9aac7f]/10 
+                                         rounded-lg border border-[#5e4a3a] hover:border-[#9aac7f]"
+                            >
+                                Sign in
+                            </button>
+                            <button
+                                onClick={handleSignUpClick}
+                                className="w-full py-3 bg-[#9aac7f] text-white rounded-lg 
+                                         hover:bg-[#5e4a3a] transition-all duration-300 
+                                         shadow-md hover:shadow-lg font-semibold"
+                            >
+                                Get Started
+                            </button>
                         </div>
-                    </motion.div>
+                    </div>
                 </motion.div>
             )}
         </AnimatePresence>

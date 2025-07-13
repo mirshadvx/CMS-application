@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff, Mail, Lock, Loader2, X } from "lucide-react";
+import { Eye, EyeOff, Loader2, X } from "lucide-react";
 import { authAPI } from "../../../services/api";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setAuthenticated, setIsUser } from "../../../store/userSlice";
 
 const SignIn = ({ onClose, onSwitchToSignUp }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
-    const navigate = useNavigate();
+
+    const dispatch = useDispatch();
 
     const {
         register,
@@ -25,13 +27,20 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
                 email: data.email,
                 password: data.password,
             });
-            console.log("Login Success:", response.data);
+            
+            if (response.data.success) {
+                dispatch(setAuthenticated(true));
+                dispatch(setIsUser(true));
+            } else {
+                dispatch(setAuthenticated(false));
+                dispatch(setIsUser(false));
+            }
             onClose();
+            alert("login success")
         } catch (error) {
-            console.log(error);
-            const errorMsg = error.response?.data?.message || "Login failed. Please try again.";
-            setErrorMessage(errorMsg);
-            console.error(error);
+            console.error("Login error:", error);
+            const msg = error.response?.data?.message || error.response?.data?.detail || "Login failed. Please try again.";
+            setErrorMessage(msg);
         } finally {
             setIsLoading(false);
         }
@@ -43,6 +52,7 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Close"
                 >
                     <X className="h-6 w-6" />
                 </button>
@@ -54,9 +64,7 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
                     </div>
 
                     {errorMessage && (
-                        <div className="mb-6 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
-                            {errorMessage}
-                        </div>
+                        <div className="mb-6 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{errorMessage}</div>
                     )}
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -66,22 +74,21 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
                             </label>
                             <div className="relative">
                                 <input
+                                    id="email"
+                                    type="email"
                                     {...register("email", {
                                         required: "Email is required",
                                         pattern: {
                                             value: /^\S+@\S+$/i,
-                                            message: "Please enter a valid email",
+                                            message: "Enter a valid email",
                                         },
                                     })}
-                                    type="email"
                                     placeholder="Enter your email"
                                     className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                                         errors.email ? "border-red-300 bg-red-50" : "border-gray-200 hover:border-gray-300"
                                     }`}
                                 />
-                                {errors.email && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-                                )}
+                                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
                             </div>
                         </div>
 
@@ -91,29 +98,32 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
                             </label>
                             <div className="relative">
                                 <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
                                     {...register("password", {
                                         required: "Password is required",
-                                        minLength: { value: 6, message: "Password must be at least 6 characters" },
+                                        minLength: { value: 6, message: "Minimum 6 characters" },
                                     })}
-                                    type={showPassword ? "text" : "password"}
                                     placeholder="Enter your password"
                                     className={`w-full px-4 py-3 pr-12 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                                        errors.password ? "border-red-300 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                                        errors.password
+                                            ? "border-red-300 bg-red-50"
+                                            : "border-gray-200 hover:border-gray-300"
                                     }`}
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
+                                    onClick={() => setShowPassword((prev) => !prev)}
                                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                    aria-label="Toggle password visibility"
                                 >
                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
-                                {errors.password && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-                                )}
+                                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
                             </div>
                         </div>
 
+                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={isLoading}

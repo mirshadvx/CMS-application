@@ -1,30 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import Navbar from "../../../Components/user/Navbar/Navbar";
-import SignIn from "../../../Components/user/auth/SignIn";
-import SignUp from "../../../Components/user/auth/SignUp";
 
 const Home = () => {
-    const [showSignIn, setShowSignIn] = useState(false);
-    const [showSignUp, setShowSignUp] = useState(false);
-
-    const handleSwitchToSignIn = () => {
-        setShowSignIn(true);
-        setShowSignUp(false);
-    };
-
-    const handleSwitchToSignUp = () => {
-        setShowSignUp(true);
-        setShowSignIn(false);
-    };
-
-    const handleClose = () => {
-        setShowSignIn(false);
-        setShowSignUp(false);
-    };
-
     return (
         <div className="min-h-screen bg-[#f0f0e8]">
-            <Navbar setShowSignIn={setShowSignIn} setShowSignUp={setShowSignUp} />
+            <Navbar />
 
             <section className="py-20 px-4">
                 <div className="container mx-auto text-center">
@@ -43,8 +23,6 @@ const Home = () => {
                     </div>
                 </div>
             </section>
-            {showSignIn && <SignIn onClose={handleClose} onSwitchToSignUp={handleSwitchToSignUp} />}
-            {showSignUp && <SignUp onClose={handleClose} onSwitchToSignIn={handleSwitchToSignIn} />}
         </div>
     );
 };

@@ -2,9 +2,13 @@ import React, { useState, useEffect } from "react";
 import { NavbarMenu } from "../../../mockData/data";
 import { IoMenu, IoClose } from "react-icons/io5";
 import ResponsiveMenu from "./ResponsiveMenu";
+import SignIn from "../auth/SignIn";
+import SignUp from "../auth/SignUp";
 
-const Navbar = ({ setShowSignIn, setShowSignUp }) => {
+const Navbar = () => {
     const [open, setOpen] = useState(false);
+    const [showSignIn, setShowSignIn] = useState(false);
+    const [showSignUp, setShowSignUp] = useState(false);
 
     useEffect(() => {
         const handleResize = () => {
@@ -16,6 +20,31 @@ const Navbar = ({ setShowSignIn, setShowSignUp }) => {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
+
+    const handleSwitchToSignIn = () => {
+        setShowSignIn(true);
+        setShowSignUp(false);
+    };
+
+    const handleSwitchToSignUp = () => {
+        setShowSignUp(true);
+        setShowSignIn(false);
+    };
+
+    const handleCloseModals = () => {
+        setShowSignIn(false);
+        setShowSignUp(false);
+    };
+
+    const handleOpenSignIn = () => {
+        setShowSignIn(true);
+        setShowSignUp(false);
+    };
+
+    const handleOpenSignUp = () => {
+        setShowSignUp(true);
+        setShowSignIn(false);
+    };
 
     return (
         <>
@@ -46,13 +75,14 @@ const Navbar = ({ setShowSignIn, setShowSignUp }) => {
 
                     <div className="hidden md:flex items-center gap-4">
                         <button
-                            onClick={() => setShowSignIn(true)}
+                            onClick={handleOpenSignIn}
                             className="px-4 py-2 text-[#5e4a3a] hover:text-[#9aac7f] 
                                          font-semibold transition-all duration-300 hover:scale-105"
                         >
                             Sign in
                         </button>
-                        <button onClick={() => setShowSignUp(true)}
+                        <button
+                            onClick={handleOpenSignUp}
                             className="px-6 py-2 bg-[#9aac7f] text-white rounded-full 
                                          hover:bg-[#5e4a3a] transition-all duration-300 hover:scale-105
                                          shadow-md hover:shadow-lg"
@@ -77,7 +107,15 @@ const Navbar = ({ setShowSignIn, setShowSignUp }) => {
                 </div>
             </nav>
 
-            <ResponsiveMenu open={open} setOpen={setOpen} />
+            <ResponsiveMenu
+                open={open}
+                setOpen={setOpen}
+                onSignInClick={handleOpenSignIn}
+                onSignUpClick={handleOpenSignUp}
+            />
+
+            {showSignIn && <SignIn onClose={handleCloseModals} onSwitchToSignUp={handleSwitchToSignUp} />}
+            {showSignUp && <SignUp onClose={handleCloseModals} onSwitchToSignIn={handleSwitchToSignIn} />}
         </>
     );
 };
