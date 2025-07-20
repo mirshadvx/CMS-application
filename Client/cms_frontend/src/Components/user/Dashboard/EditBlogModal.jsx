@@ -1,14 +1,14 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, Save, Globe, RotateCcw, RotateCw, Upload, Image as ImageIcon } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
+import { debounce } from "lodash";
 import uploadToCloudinary from "../../../services/cloudinaryService";
 import contentApi from "../../../services/content/content";
-import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 
-const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
+const EditBlogModal = ({ showEditModal, setShowEditModal, blogToEdit, setBlogToEdit, handleUpdateBlog }) => {
     const quillRef = useRef(null);
     const thumbnailInputRef = useRef(null);
     const [tagInput, setTagInput] = useState("");
@@ -16,7 +16,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
     const [categories, setCategories] = useState([]);
-    const [newBlog, setNewBlog] = useState({
+    const [editedBlog, setEditedBlog] = useState({
         title: "",
         excerpt: "",
         content: "",
@@ -26,8 +26,26 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         status: "draft",
     });
 
-    const { showSuccess, showError, showInfo, showWarning } = useToast();
+    const { showSuccess, showError } = useToast();
 
+    // Initialize form only when blogToEdit changes
+    useEffect(() => {
+        if (showEditModal && blogToEdit) {
+            const initialBlog = {
+                title: blogToEdit.title || "",
+                excerpt: blogToEdit.excerpt || "",
+                content: blogToEdit.content || "",
+                category: blogToEdit.category?.id || blogToEdit.category || "",
+                tags: blogToEdit.tags || [],
+                thumbnail: blogToEdit.thumbnail || "",
+                status: blogToEdit.status || "draft",
+            };
+            setEditedBlog(initialBlog);
+            setTagInput(blogToEdit.tags?.map((tag) => `#${tag}`).join(" ") || "");
+        }
+    }, [showEditModal, blogToEdit]);
+
+    // Fetch categories
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -38,8 +56,10 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                 showError("Failed to fetch categories");
             }
         };
-        fetchCategories();
-    }, []);
+        if (showEditModal) {
+            fetchCategories();
+        }
+    }, [showEditModal]);
 
     const undoChange = () => {
         const editor = quillRef.current?.getEditor();
@@ -66,7 +86,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                 const cloudinaryUrl = await uploadToCloudinary(file);
                 if (cloudinaryUrl) {
                     const editor = quillRef.current.getEditor();
-                    const range = editor.getSelection();
+                    const range = editor.getSelection() || { index: 0 };
                     editor.insertEmbed(range.index, "image", cloudinaryUrl);
                 }
             } catch (error) {
@@ -96,7 +116,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         try {
             const cloudinaryUrl = await uploadToCloudinary(file);
             if (cloudinaryUrl) {
-                setNewBlog({ ...newBlog, thumbnail: cloudinaryUrl });
+                setEditedBlog((prev) => ({ ...prev, thumbnail: cloudinaryUrl }));
             } else {
                 showError("Failed to upload thumbnail. Please try again.");
             }
@@ -109,7 +129,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
     };
 
     const removeThumbnail = () => {
-        setNewBlog({ ...newBlog, thumbnail: "" });
+        setEditedBlog((prev) => ({ ...prev, thumbnail: "" }));
         if (thumbnailInputRef.current) {
             thumbnailInputRef.current.value = "";
         }
@@ -157,10 +177,15 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         "image",
     ];
 
-    const handleContentChange = (content) => {
-        const cleanContent = DOMPurify.sanitize(content);
-        setNewBlog({ ...newBlog, content: cleanContent });
-    };
+    const handleContentChange = useCallback(
+        debounce((content) => {
+            const cleanContent = DOMPurify.sanitize(content, { USE_PROFILES: { html: true } });
+            if (cleanContent !== editedBlog.content) {
+                setEditedBlog((prev) => ({ ...prev, content: cleanContent }));
+            }
+        }, 300),
+        [editedBlog.content]
+    );
 
     const handleTagsChange = (e) => {
         const input = e.target.value;
@@ -172,39 +197,39 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
             .filter((tag) => tag && tag.trim().length > 0)
             .filter((tag, index, arr) => arr.indexOf(tag) === index)
             .slice(0, 10);
-        setNewBlog({ ...newBlog, tags: extractedTags });
+        setEditedBlog((prev) => ({ ...prev, tags: extractedTags }));
     };
 
     const handleTagRemove = (indexToRemove) => {
-        const updatedTags = newBlog.tags.filter((_, i) => i !== indexToRemove);
-        setNewBlog({ ...newBlog, tags: updatedTags });
+        const updatedTags = editedBlog.tags.filter((_, i) => i !== indexToRemove);
+        setEditedBlog((prev) => ({ ...prev, tags: updatedTags }));
         const newInput = updatedTags.map((tag) => `#${tag}`).join(" ");
         setTagInput(newInput);
     };
 
-    const validateBlog = (isDraft = false) => {
-        if (!newBlog.title.trim()) {
+    const validateBlog = (isDraft = true) => {
+        if (!editedBlog.title.trim()) {
             showError("Please enter a blog title.");
             return false;
         }
-        if (!newBlog.content.trim() || newBlog.content === "<p><br></p>") {
+        if (!editedBlog.content.trim() || editedBlog.content === "<p><br></p>") {
             showError("Please add some content to your blog post.");
             return false;
         }
         if (!isDraft) {
-            if (!newBlog.excerpt.trim()) {
+            if (!editedBlog.excerpt.trim()) {
                 showError("Please add an excerpt for your blog post.");
                 return false;
             }
-            if (!newBlog.category) {
+            if (!editedBlog.category) {
                 showError("Please select a category.");
                 return false;
             }
-            if (newBlog.tags.length < 3) {
+            if (editedBlog.tags.length < 3) {
                 showError("Please add at least 3 tags before publishing.");
                 return false;
             }
-            if (!newBlog.thumbnail) {
+            if (!editedBlog.thumbnail) {
                 showError("Please add a thumbnail image before publishing.");
                 return false;
             }
@@ -212,35 +237,18 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         return true;
     };
 
-    const saveBlogPost = async (status = "draft") => {
-        try {
-            const selectedCategory = categories.find((category) => category.name === newBlog.category);
-            const blogData = {
-                ...newBlog,
-                category: selectedCategory.id,
-                status,
-                wordCount: newBlog.content
-                    .replace(/<[^>]*>/g, "")
-                    .split(" ")
-                    .filter((word) => word.length > 0).length,
-                readTime: Math.ceil(newBlog.content.replace(/<[^>]*>/g, "").split(" ").length / 200),
-            };
-            const response = await api.post("user/blogs/create/", blogData);
-            return response.data;
-        } catch (error) {
-            console.error("Error saving blog post:", error);
-            throw error;
-        }
-    };
-
     const handleSaveDraft = async () => {
         if (!validateBlog(true)) return;
         setIsSaving(true);
         try {
-            await saveBlogPost("draft");
-            showSuccess("Draft saved successfully!");
+            await handleUpdateBlog(blogToEdit.id, {
+                ...editedBlog,
+                status: "draft",
+                category: parseInt(editedBlog.category) || null,
+            });
+            showSuccess("Draft updated successfully!");
         } catch (error) {
-            showError("Failed to save draft. Please try again.");
+            showError("Failed to update draft. Please try again.");
         } finally {
             setIsSaving(false);
         }
@@ -250,7 +258,11 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         if (!validateBlog(false)) return;
         setIsPublishing(true);
         try {
-            await saveBlogPost("published");
+            await handleUpdateBlog(blogToEdit.id, {
+                ...editedBlog,
+                status: "published",
+                category: parseInt(editedBlog.category) || null,
+            });
             showSuccess("Blog post published successfully!");
         } catch (error) {
             showError("Failed to publish blog post. Please try again.");
@@ -260,12 +272,18 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
     };
 
     const handleCloseModal = () => {
-        const hasUnsavedChanges = newBlog.title || newBlog.content || newBlog.excerpt || newBlog.tags.length > 0;
+        const hasUnsavedChanges =
+            editedBlog.title !== (blogToEdit?.title || "") ||
+            editedBlog.excerpt !== (blogToEdit?.excerpt || "") ||
+            editedBlog.content !== (blogToEdit?.content || "") ||
+            editedBlog.category !== (blogToEdit?.category?.id || blogToEdit?.category || "") ||
+            JSON.stringify(editedBlog.tags) !== JSON.stringify(blogToEdit?.tags || []) ||
+            editedBlog.thumbnail !== (blogToEdit?.thumbnail || "");
         if (hasUnsavedChanges) {
             const confirmClose = window.confirm("You have unsaved changes. Are you sure you want to close without saving?");
             if (!confirmClose) return;
         }
-        setNewBlog({
+        setEditedBlog({
             title: "",
             excerpt: "",
             content: "",
@@ -275,15 +293,16 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
             status: "draft",
         });
         setTagInput("");
-        setShowCreateModal(false);
+        setShowEditModal(false);
+        setBlogToEdit(null);
     };
 
-    return showCreateModal ? (
+    return showEditModal ? (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[99vh] overflow-y-auto animate-in fade-in-0 zoom-in-95">
                 <div className="sticky top-0 bg-white border-b border-gray-200 p-3 rounded-t-3xl">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold text-gray-900">Create New Blog Post</h2>
+                        <h2 className="text-2xl font-bold text-gray-900">Edit Blog Post</h2>
                         <button
                             onClick={handleCloseModal}
                             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
@@ -301,8 +320,8 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                             </label>
                             <input
                                 type="text"
-                                value={newBlog.title}
-                                onChange={(e) => setNewBlog({ ...newBlog, title: e.target.value })}
+                                value={editedBlog.title}
+                                onChange={(e) => setEditedBlog((prev) => ({ ...prev, title: e.target.value }))}
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-lg"
                                 placeholder="Enter an engaging title..."
                                 disabled={isSaving || isPublishing}
@@ -313,15 +332,15 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                                 Excerpt <span className="text-red-500">*</span>
                             </label>
                             <textarea
-                                value={newBlog.excerpt}
-                                onChange={(e) => setNewBlog({ ...newBlog, excerpt: e.target.value })}
+                                value={editedBlog.excerpt}
+                                onChange={(e) => setEditedBlog((prev) => ({ ...prev, excerpt: e.target.value }))}
                                 rows="2"
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                 placeholder="Write a compelling excerpt (recommended: 150-160 characters)..."
                                 disabled={isSaving || isPublishing}
                                 maxLength="200"
                             />
-                            <p className="text-xs text-gray-500 mt-1">{newBlog.excerpt.length}/200 characters</p>
+                            <p className="text-xs text-gray-500 mt-1">{editedBlog.excerpt.length}/200 characters</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -329,14 +348,14 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                                     Category <span className="text-red-500">*</span>
                                 </label>
                                 <select
-                                    value={newBlog.category}
-                                    onChange={(e) => setNewBlog({ ...newBlog, category: e.target.value })}
+                                    value={editedBlog.category || ""}
+                                    onChange={(e) => setEditedBlog((prev) => ({ ...prev, category: e.target.value }))}
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                     disabled={isSaving || isPublishing}
                                 >
                                     <option value="">Select category</option>
                                     {categories.map((category) => (
-                                        <option key={category.id} value={category.name}>
+                                        <option key={category.id} value={category.id}>
                                             {category.name}
                                         </option>
                                     ))}
@@ -354,9 +373,9 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                                     placeholder="#react #webdev #javascript"
                                     disabled={isSaving || isPublishing}
                                 />
-                                {newBlog.tags.length > 0 && (
+                                {editedBlog.tags.length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-2">
-                                        {newBlog.tags.map((tag, index) => (
+                                        {editedBlog.tags.map((tag, index) => (
                                             <span
                                                 key={index}
                                                 className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
@@ -374,9 +393,9 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                                     </div>
                                 )}
                                 <p className="text-xs text-gray-500 mt-1">
-                                    {newBlog.tags.length}/10 tags • Use # prefix to add tags
+                                    {editedBlog.tags.length}/10 tags • Use # prefix to add tags
                                 </p>
-                                {newBlog.tags.length >= 10 && (
+                                {editedBlog.tags.length >= 10 && (
                                     <p className="text-xs text-red-500 mt-1">Maximum 10 tags allowed.</p>
                                 )}
                             </div>
@@ -386,7 +405,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                                 Thumbnail Image <span className="text-red-500">*</span>
                             </label>
                             <div className="space-y-3">
-                                {!newBlog.thumbnail ? (
+                                {!editedBlog.thumbnail ? (
                                     <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-indigo-400 transition-colors">
                                         <input
                                             ref={thumbnailInputRef}
@@ -414,7 +433,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                                 ) : (
                                     <div className="relative">
                                         <img
-                                            src={newBlog.thumbnail}
+                                            src={editedBlog.thumbnail}
                                             alt="Thumbnail preview"
                                             className="w-full h-48 object-cover rounded-xl border border-gray-200"
                                         />
@@ -462,11 +481,11 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                             <ReactQuill
                                 ref={quillRef}
                                 theme="snow"
-                                value={newBlog.content}
+                                value={editedBlog.content}
                                 onChange={handleContentChange}
                                 modules={modules}
                                 formats={formats}
-                                placeholder="Write your amazing blog content here..."
+                                placeholder="Edit your blog content here..."
                                 style={{ height: "500px", marginBottom: "42px" }}
                                 readOnly={isSaving || isPublishing}
                             />
@@ -476,17 +495,17 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
                 <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-b-3xl">
                     <div className="flex items-center justify-between">
                         <div className="text-sm text-gray-500">
-                            {newBlog.content && (
+                            {editedBlog.content && (
                                 <span>
                                     {Math.ceil(
-                                        newBlog.content
+                                        editedBlog.content
                                             .replace(/<[^>]*>/g, "")
                                             .split(" ")
                                             .filter((word) => word.length > 0).length / 200
                                     )}{" "}
                                     min read •{" "}
                                     {
-                                        newBlog.content
+                                        editedBlog.content
                                             .replace(/<[^>]*>/g, "")
                                             .split(" ")
                                             .filter((word) => word.length > 0).length
@@ -520,4 +539,4 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
     ) : null;
 };
 
-export default CreateBlogModal;
+export default EditBlogModal;

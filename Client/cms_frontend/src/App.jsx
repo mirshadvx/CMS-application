@@ -1,15 +1,23 @@
-// import Login from "./Components/user/auth/Login";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-// import auth from "./routes/user/auth";
 import UserRoutes from "./routes/user/userRoutes";
+import { Toaster } from "sonner";
 
 function App() {
     return (
         <BrowserRouter>
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    duration: 5000,
+                    style: {
+                        background: "#333",
+                        color: "#fff",
+                    },
+                }}
+            />
             <Routes>
-               {/* {auth()} */}
-               {UserRoutes()}
-               <Route path="*" element={<div>404 Not Found</div>} />
+                {UserRoutes()}
+                <Route path="*" element={<div>404 Not Found</div>} />
             </Routes>
         </BrowserRouter>
     );

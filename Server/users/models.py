@@ -16,23 +16,17 @@ class BlogPost(models.Model):
     author = models.ForeignKey('authCustom.Profile', on_delete=models.CASCADE, related_name='blog_posts')
     title = models.CharField(max_length=100)
     content = models.TextField()
+    excerpt = models.TextField(max_length=500, blank=True)
     category = models.ForeignKey(ContentCategory, on_delete=models.CASCADE, related_name='blogs')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
     tags = models.JSONField(default=list, blank=True)
-    thumbnail = models.URLField(blank=True, null=True)
+    thumbnail = models.URLField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    published_date = models.DateTimeField(null=True, blank=True)
+    published_date = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"{self.author.username} - {self.title[:50]}"
-    
-class BlogImages(models.Model):
-    blog = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='images')
-    image_url = models.URLField()
-    
-    def __str__(self):
-        return f"{self.image_url}"
     
 class Comment(models.Model):
     blog = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments')

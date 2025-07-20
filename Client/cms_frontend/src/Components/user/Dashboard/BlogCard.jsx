@@ -1,7 +1,7 @@
 import React from "react";
-import { Edit3, Eye, MoreVertical, Calendar, Clock, Heart, MessageCircle } from "lucide-react";
+import { Edit3, Calendar, Heart, MessageCircle, Trash2, Eye } from "lucide-react";
 
-const BlogCard = ({ blog, isDraft = false, onPublishDraft }) => {
+const BlogCard = ({ blog, isDraft = false, onPublishDraft, onDelete, onEdit }) => {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
             <div className="flex">
@@ -17,7 +17,7 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft }) => {
                         <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
                                 <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-                                    {blog.category}
+                                    {blog.category.name}
                                 </span>
                                 <div className="flex items-center space-x-1">
                                     {blog.tags?.slice(0, 2).map((tag) => (
@@ -33,11 +33,24 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft }) => {
                             <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
                                 {blog.title}
                             </h3>
-                            <p className="text-gray-600 text-sm line-clamp-2 mb-3">{blog.excerpt || blog.content}</p>
+                            <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                                {blog.excerpt || blog.content.slice(0, 150)}...
+                            </p>
                         </div>
                         <div className="flex items-center space-x-1 ml-4">
-                            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-all">
-                                <MoreVertical size={16} />
+                            {isDraft && (
+                                <button
+                                    onClick={onEdit}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-all"
+                                >
+                                    <Edit3 size={16} />
+                                </button>
+                            )}
+                            <button
+                                onClick={onDelete}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            >
+                                <Trash2 size={16} />
                             </button>
                         </div>
                     </div>
@@ -45,7 +58,7 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft }) => {
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
                             <div className="flex items-center">
                                 <Calendar size={12} className="mr-1" />
-                                {new Date(blog.date).toLocaleDateString("en-US", {
+                                {new Date(blog.published_date || blog.created_at).toLocaleDateString("en-US", {
                                     month: "short",
                                     day: "numeric",
                                     year: "numeric",
@@ -57,11 +70,11 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft }) => {
                                 <div className="flex items-center space-x-3 text-xs text-gray-500">
                                     <div className="flex items-center">
                                         <Heart size={12} className="mr-1" />
-                                        {blog.likes}
+                                        {blog.likes_count || 0}
                                     </div>
                                     <div className="flex items-center">
                                         <MessageCircle size={12} className="mr-1" />
-                                        {blog.comments}
+                                        {blog.comments_count || 0}
                                     </div>
                                 </div>
                             )}
@@ -70,6 +83,7 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft }) => {
                                     onClick={() => onPublishDraft(blog.id)}
                                     className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all transform hover:scale-105 text-sm font-medium"
                                 >
+                                    <Eye size={16} className="mr-1 inline" />
                                     Publish
                                 </button>
                             )}
