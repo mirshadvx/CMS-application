@@ -7,7 +7,7 @@ export const NavbarMenu = [
     {
         id: 2,
         title: "Explore",
-        link: "#",
+        link: "/explore",
     },
     {
         id: 3,
@@ -17,6 +17,6 @@ export const NavbarMenu = [
     {
         id: 4,
         title: "Dashboard",
-        link: "#",
+        link: "/dashboard",
     },
 ];

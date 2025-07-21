@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'users',
     'authCustom',
     'django_filters',
+    'explore',
 ]
 
 AUTH_USER_MODEL = 'authCustom.Profile'

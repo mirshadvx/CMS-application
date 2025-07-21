@@ -6,7 +6,7 @@ function App() {
     return (
         <BrowserRouter>
             <Toaster
-                position="top-right"
+                position="bottom-right"
                 toastOptions={{
                     duration: 5000,
                     style: {

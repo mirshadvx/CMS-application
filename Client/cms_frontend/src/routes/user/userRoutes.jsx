@@ -3,6 +3,7 @@ import { Route } from "react-router-dom";
 import Home from "../../pages/user/home/home";
 import Dashboard from "../../pages/user/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
+import Explore from "../../pages/user/Explore";
 
 const UserRoutes = () => {
     return (
@@ -16,6 +17,7 @@ const UserRoutes = () => {
                     </ProtectedRoute>
                 }
             />
+            <Route path='explore/' element={<Explore />} />
         </>
     );
 };
