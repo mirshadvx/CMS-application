@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfieSerialzier
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -93,3 +93,14 @@ class RegisterView(APIView):
             serializer.save()
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+class UserProfilDetails(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            user = request.user
+            serializer = UserProfieSerialzier(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': "Failed to load account details"}, status=status.HTTP_400_BAD_REQUEST)

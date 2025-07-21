@@ -67,3 +67,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         attrs["username"] = user.username
         return super().validate(attrs)
+    
+class UserProfieSerialzier(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['id', 'email', 'bio', 'profile_picture', 'interests', 'first_name', 'dateOfBirth']
+        read_only_fields = ['id', 'email']

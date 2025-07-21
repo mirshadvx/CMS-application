@@ -1,8 +1,15 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import UserRoutes from "./routes/user/userRoutes";
 import { Toaster } from "sonner";
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { fetchUserDetails } from "./services/userAction";
 
 function App() {
+    const dispatch = useDispatch();
+    useEffect(() => {
+        dispatch(fetchUserDetails());
+    }, [dispatch]);
     return (
         <BrowserRouter>
             <Toaster
