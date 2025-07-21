@@ -3,7 +3,8 @@ import { X, Save, Globe, RotateCcw, RotateCw, Upload, Image as ImageIcon } from 
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
-import { debounce } from "lodash";
+// import { debounce } from "lodash";
+import debounce from "lodash.debounce";
 import uploadToCloudinary from "../../../services/cloudinaryService";
 import contentApi from "../../../services/content/content";
 import { useToast } from "../../../hooks/useToast";

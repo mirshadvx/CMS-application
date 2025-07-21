@@ -24,6 +24,7 @@
     "dompurify": "^3.2.6",
     "jodit": "^4.6.2",
     "jodit-react": "^5.2.19",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.525.0",
     "motion": "^12.23.0",
     "react": "^19.1.0",
