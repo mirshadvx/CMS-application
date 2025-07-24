@@ -7,6 +7,8 @@ import SignIn from "../auth/SignIn";
 import SignUp from "../auth/SignUp";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutReducer } from "../../../store/userSlice";
+import { authAPI } from "../../../services/api";
+import { useToast } from "../../../hooks/useToast";
 
 const Navbar = () => {
     const [open, setOpen] = useState(false);
@@ -15,6 +17,7 @@ const Navbar = () => {
     const isAuthenticated = useSelector((state) => state.user.isAuthenticated);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { showSuccess, showError } = useToast(); 
 
     useEffect(() => {
         const handleResize = () => {
@@ -51,9 +54,16 @@ const Navbar = () => {
         setShowSignIn(false);
     };
 
-    const handleLogout = () => {
-        dispatch(logoutReducer());
-        navigate("/");
+    const handleLogout = async () => {
+        try {
+            await authAPI.logout(); 
+            dispatch(logoutReducer()); 
+            showSuccess("Logged out successfully!");
+            navigate("/"); 
+        } catch (error) {
+            console.error("Logout error:", error);
+            showError("Failed to log out. Please try again."); 
+        }
     };
 
     return (
@@ -61,7 +71,7 @@ const Navbar = () => {
             <nav className="bg-[#f0f0e8] shadow-md relative z-50">
                 <div className="container flex justify-between items-center py-4">
                     <div className="text-2xl flex items-center gap-2 font-bold uppercase">
-                        <p className="text-[#5e4a3a] hover:text-[#9aac7f] transition-colors duration-300">Logo</p>
+                        <p className="text-[#5e4a3a] hover:text-[#9aac7f] transition-colors duration-300">Merlo</p>
                     </div>
                     <div className="hidden md:block">
                         <ul className="flex items-center gap-8">
@@ -119,6 +129,8 @@ const Navbar = () => {
                 onSignUpClick={handleOpenSignUp}
                 isAuthenticated={isAuthenticated}
                 onLogoutClick={handleLogout}
+                showSuccess={showSuccess} 
+                showError={showError} 
             />
             {showSignIn && <SignIn onClose={handleCloseModals} onSwitchToSignUp={handleSwitchToSignUp} />}
             {showSignUp && <SignUp onClose={handleCloseModals} onSwitchToSignIn={handleSwitchToSignIn} />}

@@ -3,7 +3,6 @@ import { X, Save, Globe, RotateCcw, RotateCw, Upload, Image as ImageIcon } from 
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
-// import { debounce } from "lodash";
 import debounce from "lodash.debounce";
 import uploadToCloudinary from "../../../services/cloudinaryService";
 import contentApi from "../../../services/content/content";
@@ -29,7 +28,6 @@ const EditBlogModal = ({ showEditModal, setShowEditModal, blogToEdit, setBlogToE
 
     const { showSuccess, showError } = useToast();
 
-    // Initialize form only when blogToEdit changes
     useEffect(() => {
         if (showEditModal && blogToEdit) {
             const initialBlog = {
@@ -46,7 +44,6 @@ const EditBlogModal = ({ showEditModal, setShowEditModal, blogToEdit, setBlogToE
         }
     }, [showEditModal, blogToEdit]);
 
-    // Fetch categories
     useEffect(() => {
         const fetchCategories = async () => {
             try {

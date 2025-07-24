@@ -5,16 +5,16 @@ import { authAPI } from "../../../services/api";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import contentApi from "../../../services/content/content";
+import { useToast } from "../../../hooks/useToast";
 
 const SignUp = ({ onClose, onSwitchToSignIn }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
     const [contentCategories, setContentCategories] = useState([]);
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [categoriesLoading, setCategoriesLoading] = useState(true);
-    const [categoriesError, setCategoriesError] = useState("");
+    const { showSuccess, showError } = useToast();
 
     const {
         register,
@@ -24,24 +24,24 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
     } = useForm();
 
     const password = watch("password");
+
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 setCategoriesLoading(true);
-                const resonse = await contentApi.getCategories();
-                setContentCategories(resonse.data);
-                setCategoriesError("");
+                const response = await contentApi.getCategories();
+                setContentCategories(response.data);
             } catch (error) {
                 console.log(error);
                 const errorMsg = error.response?.data?.error || "Failed to load preferences";
-                setCategoriesError(errorMsg);
+                showError(errorMsg);
             } finally {
                 setCategoriesLoading(false);
             }
         };
 
         fetchCategories();
-    }, []);
+    }, [showError]);
 
     const handleCategoryToggle = (categoryId) => {
         setSelectedCategories((prev) =>
@@ -51,8 +51,6 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
 
     const onSubmit = async (data) => {
         setIsLoading(true);
-        setErrorMessage("");
-        console.log("testtest ",data);
 
         try {
             const registrationData = {
@@ -67,14 +65,13 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
 
             const response = await authAPI.register(registrationData);
             console.log("Signup Success:", response.data);
-
+            showSuccess("Account created successfully!");
             onClose();
         } catch (error) {
             console.log(error);
             const errorMsg =
                 error.response?.data?.message || error.response?.data?.error || "Registration failed. Please try again.";
-            setErrorMessage(errorMsg);
-            console.error(error);
+            showError(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -95,10 +92,6 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
                         <h1 className="text-2xl font-bold text-gray-900 mb-2">Create an Account</h1>
                         <p className="text-gray-600">Sign up to access personalized articles and more.</p>
                     </div>
-
-                    {errorMessage && (
-                        <div className="mb-6 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{errorMessage}</div>
-                    )}
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
@@ -281,8 +274,6 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
                                     <Loader2 className="animate-spin h-4 w-4 mr-2" />
                                     Loading preferences...
                                 </div>
-                            ) : categoriesError ? (
-                                <div className="text-sm text-red-600">{categoriesError}</div>
                             ) : (
                                 <div className="space-y-2 max-h-32 overflow-y-auto">
                                     {contentCategories.map((category) => (
