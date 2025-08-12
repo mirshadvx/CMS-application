@@ -24,6 +24,7 @@ class BlogPost(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_date = models.DateTimeField(auto_now_add=True)
+    show = models.BooleanField(default=True)
     
     def __str__(self):
         return f"{self.author.username} - {self.title[:50]}"
