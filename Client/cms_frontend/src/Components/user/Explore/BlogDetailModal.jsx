@@ -11,7 +11,7 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
     const [newComment, setNewComment] = useState("");
     const [editingComment, setEditingComment] = useState(null);
     const [editingText, setEditingText] = useState("");
-
+ 
     const { showSuccess, showError, showInfo, showWarning } = useToast();
 
     useEffect(() => {
