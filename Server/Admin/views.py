@@ -36,9 +36,10 @@ class AdminLogin(APIView):
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
-
+        
         response = Response({
             "success": True,
+            "role": "admin",
             "user": {
                 "id": user.id,
                 "email": user.email,

@@ -42,9 +42,14 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'authCustom.Profile'
 
+# AUTHENTICATION_BACKENDS = [
+#     'authCustom.backends.EmailBackend',
+# ]
 AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
     'authCustom.backends.EmailBackend',
 ]
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

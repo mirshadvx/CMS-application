@@ -20,7 +20,6 @@ const AdminLogin = () => {
                 dispatch(setAuthenticated(true));
                 dispatch(setIsAdmin());
                 dispatch(setUser(data.user));
-                // Store tokens as needed (don't use localStorage for httpOnly cookies)
                 navigate("/admin");
             } else {
                 setError("Invalid credentials or permission denied.");
