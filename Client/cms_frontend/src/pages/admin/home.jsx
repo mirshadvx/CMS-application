@@ -1,4 +1,4 @@
-const Home = () => {
+const home = () => {
     return (
         <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-lg p-8">
@@ -9,4 +9,4 @@ const Home = () => {
     );
 };
 
-export default Home;
+export default home;
