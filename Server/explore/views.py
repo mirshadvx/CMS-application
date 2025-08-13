@@ -13,7 +13,7 @@ class BlogExploretListView(APIView):
 
     def get(self, request):
         try:
-            queryset = BlogPost.objects.filter(status='published').annotate(
+            queryset = BlogPost.objects.filter(status='published', show=True).annotate(
                 likes_count=Count('likes'),
                 comments_count=Count('comments') )
 
