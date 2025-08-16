@@ -85,6 +85,7 @@ def is_authenticated(request):
     return Response({'authenticated': True}, status=status.HTTP_200_OK) if request.user.is_authenticated else Response({'authenticated': False}, status=status.HTTP_401_UNAUTHORIZED)
 
 class RegisterView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):

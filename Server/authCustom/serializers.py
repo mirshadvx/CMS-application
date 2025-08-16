@@ -35,7 +35,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         interests = validated_data.pop('interests', [])
 
         user = Profile(
-            username=validated_data['email'],
             email=validated_data['email'],
             first_name=first_name,
             last_name=last_name,

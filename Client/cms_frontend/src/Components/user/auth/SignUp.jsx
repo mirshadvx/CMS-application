@@ -41,7 +41,7 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
         };
 
         fetchCategories();
-    }, [showError]);
+    }, []);
 
     const handleCategoryToggle = (categoryId) => {
         setSelectedCategories((prev) =>
@@ -69,8 +69,18 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
             onClose();
         } catch (error) {
             console.log(error);
-            const errorMsg =
-                error.response?.data?.message || error.response?.data?.error || "Registration failed. Please try again.";
+
+            let errorMsg = "Registration failed. Please try again.";
+
+            if (error.response?.data?.error) {
+                const errors = error.response.data.error;
+                // Example: { email: ["user with this email already exists."] }
+                const firstKey = Object.keys(errors)[0];
+                if (firstKey && Array.isArray(errors[firstKey])) {
+                    errorMsg = errors[firstKey][0];
+                }
+            }
+
             showError(errorMsg);
         } finally {
             setIsLoading(false);
@@ -102,7 +112,10 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
                                 <input
                                     {...register("firstName", {
                                         required: "First name is required",
-                                        minLength: { value: 2, message: "First name must be at least 2 characters" },
+                                        minLength: {
+                                            value: 2,
+                                            message: "First name must be at least 2 characters",
+                                        },
                                     })}
                                     type="text"
                                     className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
@@ -123,7 +136,10 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
                                 <input
                                     {...register("lastName", {
                                         required: "Last name is required",
-                                        minLength: { value: 2, message: "Last name must be at least 2 characters" },
+                                        minLength: {
+                                            value: 2,
+                                            message: "Last name must be at least 2 characters",
+                                        },
                                     })}
                                     type="text"
                                     className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
@@ -210,7 +226,10 @@ const SignUp = ({ onClose, onSwitchToSignIn }) => {
                                 <input
                                     {...register("password", {
                                         required: "Password is required",
-                                        minLength: { value: 8, message: "Password must be at least 8 characters" },
+                                        minLength: {
+                                            value: 8,
+                                            message: "Password must be at least 8 characters",
+                                        },
                                         pattern: {
                                             value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
                                             message:
