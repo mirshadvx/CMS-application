@@ -4,7 +4,7 @@ import Home from "../../pages/user/home/home";
 import Dashboard from "../../pages/user/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import Explore from "../../pages/user/Explore";
-import Profile from "../../pages/user/profile";
+import Profile from "../../pages/user/Profile";
 
 const UserRoutes = () => {
     return (
@@ -18,8 +18,22 @@ const UserRoutes = () => {
                     </ProtectedRoute>
                 }
             />
-            <Route path="explore/" element={<Explore />} />
-            <Route path="profile/" element={<Profile />} />
+            <Route
+                path="explore/"
+                element={
+                    <ProtectedRoute>
+                        <Explore />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="profile/"
+                element={
+                    <ProtectedRoute>
+                        <Profile />
+                    </ProtectedRoute>
+                }
+            />
         </>
     );
 };
