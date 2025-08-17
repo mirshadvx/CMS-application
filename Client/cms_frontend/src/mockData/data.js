@@ -9,13 +9,13 @@ export const NavbarMenu = [
         title: "Explore",
         link: "/explore",
     },
-    // {
-    //     id: 3,
-    //     title: "Profile",
-    //     link: "#",
-    // },
     {
         id: 3,
+        title: "Profile",
+        link: "/profile",
+    },
+    {
+        id: 4,
         title: "Dashboard",
         link: "/dashboard",
     },

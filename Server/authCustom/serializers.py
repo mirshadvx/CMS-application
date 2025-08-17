@@ -67,7 +67,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         attrs["username"] = user.username
         return super().validate(attrs)
     
+class ContentCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentCategory
+        fields = ['id', 'name']
+    
 class UserProfieSerialzier(serializers.ModelSerializer):
+    interests = ContentCategorySerializer(many=True, read_only=True)
     class Meta:
         model = Profile
         fields = ['id', 'email', 'bio', 'profile_picture', 'interests', 'first_name', 'dateOfBirth']
