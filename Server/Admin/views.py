@@ -19,7 +19,6 @@ class AdminLogin(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-        print("Custom EmailBackend called with:", email, password)
         if not email or not password:
             return Response({"success": False, "error": "Email and password are required"},
                             status=status.HTTP_400_BAD_REQUEST)

@@ -41,7 +41,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             return res
         except Exception as e:
             logger.debug(e)
-            print(e)
             return Response({'success': False, 'message': "No active account found this information"}, status=status.HTTP_400_BAD_REQUEST)
         
 class customTokenRefreshView(TokenRefreshView):
@@ -66,7 +65,6 @@ class customTokenRefreshView(TokenRefreshView):
             
             return res
         except Exception as e:
-            print(e)
             return Response({'refreshed': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 @api_view(['POST'])
