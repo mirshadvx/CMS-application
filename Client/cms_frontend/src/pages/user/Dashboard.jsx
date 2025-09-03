@@ -91,6 +91,11 @@ const Dashboard = () => {
         }
     };
 
+    const handleBlogCreated = () => {
+        fetchUserBlogs();
+        setShowCreateModal(false);
+    };
+
     const publishedBlogs = blogs.filter((blog) => blog.status === "published");
     const draftBlogs = blogs.filter((blog) => blog.status === "draft");
 
@@ -262,7 +267,11 @@ const Dashboard = () => {
                     </div>
                 )}
             </div>
-            <CreateBlogModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} />
+            <CreateBlogModal
+                showCreateModal={showCreateModal}
+                setShowCreateModal={setShowCreateModal}
+                onBlogCreated={handleBlogCreated}
+            />
             <EditBlogModal
                 showEditModal={showEditModal}
                 setShowEditModal={setShowEditModal}

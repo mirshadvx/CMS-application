@@ -8,7 +8,7 @@ import contentApi from "../../../services/content/content";
 import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 
-const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
+const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated }) => {
     const quillRef = useRef(null);
     const thumbnailInputRef = useRef(null);
     const [tagInput, setTagInput] = useState("");
@@ -25,7 +25,6 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         thumbnail: "",
         status: "draft",
     });
-
     const { showSuccess, showError, showInfo, showWarning } = useToast();
 
     useEffect(() => {
@@ -40,6 +39,19 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         };
         fetchCategories();
     }, []);
+
+    const resetForm = () => {
+        setNewBlog({
+            title: "",
+            excerpt: "",
+            content: "",
+            category: "",
+            tags: [],
+            thumbnail: "",
+            status: "draft",
+        });
+        setTagInput("");
+    };
 
     const undoChange = () => {
         const editor = quillRef.current?.getEditor();
@@ -56,11 +68,9 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         input.setAttribute("type", "file");
         input.setAttribute("accept", "image/*");
         input.click();
-
         input.onchange = async () => {
             const file = input.files[0];
             if (!file) return;
-
             setIsUploading(true);
             try {
                 const cloudinaryUrl = await uploadToCloudinary(file);
@@ -81,17 +91,14 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
     const handleThumbnailUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         if (!file.type.startsWith("image/")) {
             showError("Please select an image file");
             return;
         }
-
         if (file.size > 5 * 1024 * 1024) {
             showError("Image size should be less than 5MB");
             return;
         }
-
         setIsUploading(true);
         try {
             const cloudinaryUrl = await uploadToCloudinary(file);
@@ -239,6 +246,8 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         try {
             await saveBlogPost("draft");
             showSuccess("Draft saved successfully!");
+            resetForm();
+            onBlogCreated();
         } catch (error) {
             showError("Failed to save draft. Please try again.");
         } finally {
@@ -252,6 +261,8 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
         try {
             await saveBlogPost("published");
             showSuccess("Blog post published successfully!");
+            resetForm();
+            onBlogCreated();
         } catch (error) {
             showError("Failed to publish blog post. Please try again.");
         } finally {
@@ -265,16 +276,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal }) => {
             const confirmClose = window.confirm("You have unsaved changes. Are you sure you want to close without saving?");
             if (!confirmClose) return;
         }
-        setNewBlog({
-            title: "",
-            excerpt: "",
-            content: "",
-            category: "",
-            tags: [],
-            thumbnail: "",
-            status: "draft",
-        });
-        setTagInput("");
+        resetForm();
         setShowCreateModal(false);
     };
 
