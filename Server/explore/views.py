@@ -37,8 +37,8 @@ class BlogPostDetailView(APIView):
 
     def get(self, request, id):
         try:
-            blog_post = BlogPost.objects.get(id=id)
-            serializer = BlogPostDetailSerializer(blog_post)
+            blog_post = BlogPost.objects.get(id=id, status='published', show=True)
+            serializer = BlogPostDetailSerializer(blog_post, context={'request': request})
             return Response(serializer.data)
         except BlogPost.DoesNotExist:
             return Response(
@@ -51,7 +51,7 @@ class ToggleLikeView(APIView):
 
     def post(self, request, id):
         try:
-            blog_post = BlogPost.objects.get(id=id)
+            blog_post = BlogPost.objects.get(id=id, status='published', show=True)
             user = request.user
 
             like, created = BlogLike.objects.get_or_create(blog=blog_post, user=user)
@@ -76,9 +76,9 @@ class CommentsListView(APIView):
 
     def get(self, request, id):
         try:
-            blog_post = BlogPost.objects.get(id=id)
-            comments = Comment.objects.filter(blog=blog_post)
-            serializer = CommentSerializer(comments, many=True)
+            blog_post = BlogPost.objects.get(id=id, status='published', show=True)
+            comments = Comment.objects.filter(blog=blog_post).select_related('user', 'blog__author').order_by('-created_at')
+            serializer = CommentSerializer(comments, many=True, context={'request': request})
             return Response(serializer.data)
         except BlogPost.DoesNotExist:
             return Response(
@@ -88,14 +88,71 @@ class CommentsListView(APIView):
 
     def post(self, request, id):
         try:
-            blog_post = BlogPost.objects.get(id=id)
+            blog_post = BlogPost.objects.get(id=id, status='published', show=True)
             serializer = CommentSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
-                serializer.save(blog=blog_post, user=request.user)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                comment = serializer.save(blog=blog_post, user=request.user)
+                response_serializer = CommentSerializer(comment, context={'request': request})
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except BlogPost.DoesNotExist:
             return Response(
                 {"error": "Blog post not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+class CommentDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, comment_id):
+        try:
+            return Comment.objects.select_related('user', 'blog__author').get(
+                id=comment_id,
+                blog__status='published',
+                blog__show=True
+            )
+        except Comment.DoesNotExist:
+            return None
+
+    def has_comment_permission(self, request, comment):
+        return comment.user_id == request.user.id or comment.blog.author_id == request.user.id
+
+    def put(self, request, comment_id):
+        comment = self.get_object(comment_id)
+        if not comment:
+            return Response(
+                {"error": "Comment not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if not self.has_comment_permission(request, comment):
+            return Response(
+                {"error": "You do not have permission to edit this comment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = CommentSerializer(
+            comment,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, comment_id):
+        comment = self.get_object(comment_id)
+        if not comment:
+            return Response(
+                {"error": "Comment not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if not self.has_comment_permission(request, comment):
+            return Response(
+                {"error": "You do not have permission to delete this comment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

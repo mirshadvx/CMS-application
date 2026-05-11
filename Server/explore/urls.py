@@ -6,4 +6,5 @@ urlpatterns = [
     path('blogs/<int:id>/', BlogPostDetailView.as_view(), name='blog-detail'),
     path('blogs/<int:id>/like/', ToggleLikeView.as_view(), name='toggle-like'),
     path('blogs/<int:id>/comments/', CommentsListView.as_view(), name='comments-list'),
+    path('blogs/comments/<int:comment_id>/', CommentDetailView.as_view(), name='comment-detail'),
 ]

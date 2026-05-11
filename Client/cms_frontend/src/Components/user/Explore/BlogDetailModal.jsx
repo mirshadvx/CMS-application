@@ -3,7 +3,7 @@ import { X, Heart, MessageCircle, Calendar, Tag, Share2, Clock, Send, Edit2, Tra
 import api from "../../../services/api";
 import { useToast } from "../../../hooks/useToast";
 
-const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
+const BlogDetailModal = ({ blogId, isOpen, onClose }) => {
     const [blog, setBlog] = useState(null);
     const [isLiked, setIsLiked] = useState(false);
     const [likesCount, setLikesCount] = useState(0);
@@ -11,8 +11,10 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
     const [newComment, setNewComment] = useState("");
     const [editingComment, setEditingComment] = useState(null);
     const [editingText, setEditingText] = useState("");
+    const [commentToDelete, setCommentToDelete] = useState(null);
+    const [isDeletingComment, setIsDeletingComment] = useState(false);
  
-    const { showSuccess, showError, showInfo, showWarning } = useToast();
+    const { showSuccess, showError, showInfo } = useToast();
 
     useEffect(() => {
         if (isOpen && blogId) {
@@ -37,12 +39,7 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
             const fetchComments = async () => {
                 try {
                     const response = await api.get(`explore/blogs/${blogId}/comments/`);
-                    const commentsWithMetadata = response.data.map((comment) => ({
-                        ...comment,
-                        is_own: comment.user.email === currentUserEmail,
-                        is_liked: false,
-                    }));
-                    setComments(commentsWithMetadata);
+                    setComments(response.data);
                 } catch (error) {
                     console.error("Error fetching comments:", error);
                     showError("Failed to fetch comments.");
@@ -55,7 +52,11 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
         return () => {
             document.body.style.overflow = "unset";
         };
-    }, [isOpen, blogId, currentUserEmail]);
+    }, [isOpen, blogId]);
+
+    const getDisplayName = (user) => {
+        return user?.display_name || [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "User";
+    };
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString("en-US", {
@@ -92,11 +93,11 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
             const response = await api.post(`explore/blogs/${blogId}/like/`);
             if (response.data.action === "liked") {
                 setIsLiked(true);
-                setLikesCount((prev) => prev + 1);
+                setLikesCount(response.data.likes_count);
                 showSuccess("Liked the blog post!");
             } else {
                 setIsLiked(false);
-                setLikesCount((prev) => prev - 1);
+                setLikesCount(response.data.likes_count);
                 showInfo("Unliked the blog post.");
             }
         } catch (error) {
@@ -126,6 +127,9 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
                     content: newComment,
                 });
                 setComments([response.data, ...comments]);
+                setBlog((prev) =>
+                    prev ? { ...prev, comments_count: (prev.comments_count || comments.length) + 1 } : prev
+                );
                 setNewComment("");
                 showSuccess("Comment added successfully!");
             } catch (error) {
@@ -135,16 +139,33 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
         }
     };
 
-    const handleDeleteComment = async (commentId) => {
-        if (window.confirm("Are you sure you want to delete this comment?")) {
-            try {
-                await api.delete(`explore/blogs/comments/${commentId}/`);
-                setComments(comments.filter((comment) => comment.id !== commentId));
-                showSuccess("Comment deleted successfully!");
-            } catch (error) {
-                console.error("Error deleting comment:", error);
-                showError("Failed to delete comment.");
-            }
+    const openDeleteCommentModal = (comment) => {
+        setCommentToDelete(comment);
+    };
+
+    const closeDeleteCommentModal = () => {
+        if (!isDeletingComment) {
+            setCommentToDelete(null);
+        }
+    };
+
+    const handleDeleteComment = async () => {
+        if (!commentToDelete) return;
+
+        setIsDeletingComment(true);
+        try {
+            await api.delete(`explore/blogs/comments/${commentToDelete.id}/`);
+            setComments(comments.filter((comment) => comment.id !== commentToDelete.id));
+            setBlog((prev) =>
+                prev ? { ...prev, comments_count: Math.max(0, (prev.comments_count || comments.length) - 1) } : prev
+            );
+            setCommentToDelete(null);
+            showSuccess("Comment deleted successfully!");
+        } catch (error) {
+            console.error("Error deleting comment:", error);
+            showError("Failed to delete comment.");
+        } finally {
+            setIsDeletingComment(false);
         }
     };
 
@@ -159,7 +180,7 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
                 content: editingText,
             });
             setComments(
-                comments.map((comment) => (comment.id === commentId ? { ...comment, content: editingText } : comment))
+                comments.map((comment) => (comment.id === commentId ? response.data : comment))
             );
             setEditingComment(null);
             setEditingText("");
@@ -240,10 +261,10 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
                                     <div className="flex items-center space-x-4 mb-4 md:mb-0">
                                         <div className="flex items-center space-x-2">
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                                                {blog.author.username?.charAt(0).toUpperCase() || "U"}
+                                                {getDisplayName(blog.author)?.charAt(0).toUpperCase() || "U"}
                                             </div>
                                             <div>
-                                                <p className="font-medium text-gray-900">{blog.author.username}</p>
+                                                <p className="font-medium text-gray-900">{getDisplayName(blog.author)}</p>
                                                 <div className="flex items-center text-sm text-gray-500">
                                                     <Calendar className="w-4 h-4 mr-1" />
                                                     <span>{formatDate(blog.created_at)}</span>
@@ -327,33 +348,39 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
                                         {comments.map((comment) => (
                                             <div key={comment.id} className="flex space-x-3">
                                                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                                                    {comment.user.username?.charAt(0).toUpperCase() || "U"}
+                                                    {getDisplayName(comment.user)?.charAt(0).toUpperCase() || "U"}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="bg-gray-50 rounded-lg p-4">
                                                         <div className="flex items-center justify-between mb-2">
                                                             <div className="flex items-center space-x-2">
                                                                 <span className="font-medium text-gray-900">
-                                                                    {comment.user.username}
+                                                                    {getDisplayName(comment.user)}
                                                                 </span>
                                                                 <span className="text-sm text-gray-500">
                                                                     {getRelativeTime(comment.created_at)}
                                                                 </span>
                                                             </div>
-                                                            {comment.is_own && (
+                                                            {(comment.can_edit || comment.can_delete) && (
                                                                 <div className="flex items-center space-x-1">
-                                                                    <button
-                                                                        onClick={() => handleEditComment(comment)}
-                                                                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                                                                    >
-                                                                        <Edit2 className="w-4 h-4 text-gray-500" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteComment(comment.id)}
-                                                                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                                                    </button>
+                                                                    {comment.can_edit && (
+                                                                        <button
+                                                                            onClick={() => handleEditComment(comment)}
+                                                                            className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                                                            title="Edit comment"
+                                                                        >
+                                                                            <Edit2 className="w-4 h-4 text-gray-500" />
+                                                                        </button>
+                                                                    )}
+                                                                    {comment.can_delete && (
+                                                                        <button
+                                                                            onClick={() => openDeleteCommentModal(comment)}
+                                                                            className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                                                            title="Delete comment"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -396,6 +423,38 @@ const BlogDetailModal = ({ blogId, isOpen, onClose, currentUserEmail }) => {
                     </div>
                 </div>
             </div>
+            {commentToDelete && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+                    <div className="absolute inset-0 bg-black/40" onClick={closeDeleteCommentModal} />
+                    <div className="relative w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+                            <Trash2 className="h-6 w-6 text-red-600" />
+                        </div>
+                        <h3 className="mb-2 text-center text-lg font-semibold text-gray-900">Delete comment?</h3>
+                        <p className="mb-6 text-center text-sm text-gray-600">
+                            This comment will be permanently removed. This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={closeDeleteCommentModal}
+                                disabled={isDeletingComment}
+                                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeleteComment}
+                                disabled={isDeletingComment}
+                                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isDeletingComment ? "Deleting..." : "Delete"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
