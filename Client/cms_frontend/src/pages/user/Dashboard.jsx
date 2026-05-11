@@ -220,6 +220,7 @@ const Dashboard = () => {
                                         <BlogCard
                                             key={blog.id}
                                             blog={blog}
+                                            onEdit={() => handleEditBlog(blog)}
                                             onDelete={() => {
                                                 setBlogToDelete(blog);
                                                 setShowDeleteModal(true);
@@ -260,11 +261,11 @@ const Dashboard = () => {
                                             blog={blog}
                                             isDraft={true}
                                             onPublishDraft={handlePublishDraft}
+                                            onEdit={() => handleEditBlog(blog)}
                                             onDelete={() => {
                                                 setBlogToDelete(blog);
                                                 setShowDeleteModal(true);
                                             }}
-                                            onEdit={() => handleEditBlog(blog)}
                                         />
                                     ))}
                             </div>

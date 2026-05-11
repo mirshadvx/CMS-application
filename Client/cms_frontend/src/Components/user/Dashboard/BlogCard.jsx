@@ -17,12 +17,12 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft, onDelete, onEdit }) =
                         <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
                                 <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-                                    {blog.category.name}
+                                    {blog.category?.name || blog.category}
                                 </span>
                                 <div className="flex items-center space-x-1">
-                                    {blog.tags?.slice(0, 2).map((tag) => (
+                                    {blog.tags?.slice(0, 2).map((tag, idx) => (
                                         <span
-                                            key={tag}
+                                            key={idx}
                                             className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full"
                                         >
                                             {tag}
@@ -34,26 +34,28 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft, onDelete, onEdit }) =
                                 {blog.title}
                             </h3>
                             <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                                {blog.excerpt || blog.content.slice(0, 150)}...
+                                {blog.excerpt || blog.content?.slice(0, 150)}...
                             </p>
                         </div>
+
                         <div className="flex items-center space-x-1 ml-4">
-                            {isDraft && (
-                                <button
-                                    onClick={onEdit}
-                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-all"
-                                >
-                                    <Edit3 size={16} />
-                                </button>
-                            )}
+                            <button
+                                onClick={onEdit}
+                                className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                title="Edit Post"
+                            >
+                                <Edit3 size={16} />
+                            </button>
                             <button
                                 onClick={onDelete}
                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                title="Delete Post"
                             >
                                 <Trash2 size={16} />
                             </button>
                         </div>
                     </div>
+
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
                             <div className="flex items-center">
@@ -65,6 +67,7 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft, onDelete, onEdit }) =
                                 })}
                             </div>
                         </div>
+
                         <div className="flex items-center space-x-4">
                             {!isDraft && (
                                 <div className="flex items-center space-x-3 text-xs text-gray-500">
@@ -78,6 +81,7 @@ const BlogCard = ({ blog, isDraft = false, onPublishDraft, onDelete, onEdit }) =
                                     </div>
                                 </div>
                             )}
+
                             {isDraft && (
                                 <button
                                     onClick={() => onPublishDraft(blog.id)}
