@@ -12,7 +12,7 @@ export const NavbarMenu = [
     {
         id: 3,
         title: "Profile",
-        link: "#",
+        link: "/profile",
     },
     {
         id: 4,

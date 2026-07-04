@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, FileText, Search, Filter, BookOpen, ChevronDown, Globe } from "lucide-react";
+import { Plus, FileText, Search, Filter, BookOpen, ChevronDown, Globe } from "lucide-react";
 import Navbar from "../../Components/user/Navbar/Navbar";
 import BlogCard from "../../Components/user/Dashboard/BlogCard";
 import CreateBlogModal from "../../Components/user/Dashboard/CreateBlogModal";
 import EditBlogModal from "../../Components/user/Dashboard/EditBlogModal";
 import api from "../../services/api";
+import { BounceLoader } from "react-spinners";
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState("published");
@@ -15,8 +16,10 @@ const Dashboard = () => {
     const [blogToDelete, setBlogToDelete] = useState(null);
     const [blogToEdit, setBlogToEdit] = useState(null);
     const [blogs, setBlogs] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const fetchUserBlogs = async () => {
+        setLoading(true);
         try {
             const response = await api.get("user/blogs/user/", {
                 params: { status: activeTab === "published" ? "published" : "draft" },
@@ -24,6 +27,8 @@ const Dashboard = () => {
             setBlogs(response.data);
         } catch (error) {
             console.error("Failed to fetch blogs:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -91,6 +96,11 @@ const Dashboard = () => {
         }
     };
 
+    const handleBlogCreated = () => {
+        fetchUserBlogs();
+        setShowCreateModal(false);
+    };
+
     const publishedBlogs = blogs.filter((blog) => blog.status === "published");
     const draftBlogs = blogs.filter((blog) => blog.status === "draft");
 
@@ -154,7 +164,12 @@ const Dashboard = () => {
                         </button>
                     </div>
                 </div>
-                {activeTab === "published" && (
+
+                {loading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <BounceLoader color="#8A614F" size={60} />
+                    </div>
+                ) : activeTab === "published" ? (
                     <div>
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
@@ -205,6 +220,7 @@ const Dashboard = () => {
                                         <BlogCard
                                             key={blog.id}
                                             blog={blog}
+                                            onEdit={() => handleEditBlog(blog)}
                                             onDelete={() => {
                                                 setBlogToDelete(blog);
                                                 setShowDeleteModal(true);
@@ -214,13 +230,11 @@ const Dashboard = () => {
                             </div>
                         )}
                     </div>
-                )}
-                {activeTab === "drafts" && (
+                ) : (
                     <div>
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900">Draft Posts</h2>
-                                <p className="text-gray-600">Continue working on your unpublished content</p>
                             </div>
                             <div className="text-sm text-gray-600 bg-white px-4 py-2 rounded-xl border border-gray-200">
                                 {draftBlogs.length} drafts
@@ -228,9 +242,6 @@ const Dashboard = () => {
                         </div>
                         {draftBlogs.length === 0 ? (
                             <div className="text-center py-16 bg-white rounded-2xl">
-                                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <FileText size={32} className="text-gray-400" />
-                                </div>
                                 <p className="text-gray-500 text-lg font-medium mb-2">No drafts saved yet</p>
                                 <p className="text-gray-400 mb-6">Save your work in progress as drafts!</p>
                                 <button
@@ -250,11 +261,11 @@ const Dashboard = () => {
                                             blog={blog}
                                             isDraft={true}
                                             onPublishDraft={handlePublishDraft}
+                                            onEdit={() => handleEditBlog(blog)}
                                             onDelete={() => {
                                                 setBlogToDelete(blog);
                                                 setShowDeleteModal(true);
                                             }}
-                                            onEdit={() => handleEditBlog(blog)}
                                         />
                                     ))}
                             </div>
@@ -262,7 +273,11 @@ const Dashboard = () => {
                     </div>
                 )}
             </div>
-            <CreateBlogModal showCreateModal={showCreateModal} setShowCreateModal={setShowCreateModal} />
+            <CreateBlogModal
+                showCreateModal={showCreateModal}
+                setShowCreateModal={setShowCreateModal}
+                onBlogCreated={handleBlogCreated}
+            />
             <EditBlogModal
                 showEditModal={showEditModal}
                 setShowEditModal={setShowEditModal}

@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfieSerialzier
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -41,7 +41,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             return res
         except Exception as e:
             logger.debug(e)
-            print(e)
             return Response({'success': False, 'message': "No active account found this information"}, status=status.HTTP_400_BAD_REQUEST)
         
 class customTokenRefreshView(TokenRefreshView):
@@ -66,7 +65,6 @@ class customTokenRefreshView(TokenRefreshView):
             
             return res
         except Exception as e:
-            print(e)
             return Response({'refreshed': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 @api_view(['POST'])
@@ -85,6 +83,7 @@ def is_authenticated(request):
     return Response({'authenticated': True}, status=status.HTTP_200_OK) if request.user.is_authenticated else Response({'authenticated': False}, status=status.HTTP_401_UNAUTHORIZED)
 
 class RegisterView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -93,3 +92,14 @@ class RegisterView(APIView):
             serializer.save()
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+class UserProfilDetails(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            user = request.user
+            serializer = UserProfieSerialzier(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': "Failed to load account details"}, status=status.HTTP_400_BAD_REQUEST)

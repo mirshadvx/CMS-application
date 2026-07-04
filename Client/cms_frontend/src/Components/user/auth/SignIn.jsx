@@ -4,13 +4,13 @@ import { Eye, EyeOff, Loader2, X } from "lucide-react";
 import { authAPI } from "../../../services/api";
 import { useDispatch } from "react-redux";
 import { setAuthenticated, setIsUser } from "../../../store/userSlice";
+import { useToast } from "../../../hooks/useToast";
 
 const SignIn = ({ onClose, onSwitchToSignUp }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-
     const dispatch = useDispatch();
+    const { showSuccess, showError } = useToast();
 
     const {
         register,
@@ -20,27 +20,27 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
 
     const onSubmit = async (data) => {
         setIsLoading(true);
-        setErrorMessage("");
 
         try {
             const response = await authAPI.login({
                 email: data.email,
                 password: data.password,
             });
-            
+
             if (response.data.success) {
                 dispatch(setAuthenticated(true));
                 dispatch(setIsUser(true));
+                showSuccess("Login successful!");
+                onClose();
             } else {
                 dispatch(setAuthenticated(false));
                 dispatch(setIsUser(false));
+                showError("Login failed. Please check your credentials.");
             }
-            onClose();
-            alert("login success")
         } catch (error) {
             console.error("Login error:", error);
             const msg = error.response?.data?.message || error.response?.data?.detail || "Login failed. Please try again.";
-            setErrorMessage(msg);
+            showError(msg);
         } finally {
             setIsLoading(false);
         }
@@ -62,10 +62,6 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
                         <h1 className="text-2xl font-bold text-gray-900 mb-2">Sign In</h1>
                         <p className="text-gray-600">Sign in to your account to continue.</p>
                     </div>
-
-                    {errorMessage && (
-                        <div className="mb-6 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{errorMessage}</div>
-                    )}
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div>
@@ -123,7 +119,6 @@ const SignIn = ({ onClose, onSwitchToSignUp }) => {
                             </div>
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={isLoading}

@@ -13,6 +13,10 @@ const BlogCard = ({ blog }) => {
         });
     };
 
+    const getDisplayName = (user) => {
+        return user?.display_name || [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "User";
+    };
+
     const handleCardClick = () => {
         setIsModalOpen(true);
     };
@@ -46,7 +50,7 @@ const BlogCard = ({ blog }) => {
                 <div className="p-6">
                     <div className="flex items-center text-sm text-gray-500 mb-3">
                         <User className="w-4 h-4 mr-2" />
-                        <span className="mr-4">{blog.author.username}</span>
+                        <span className="mr-4">{getDisplayName(blog.author)}</span>
                         <Calendar className="w-4 h-4 mr-2" />
                         <span>{formatDate(blog.created_at)}</span>
                     </div>

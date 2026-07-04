@@ -1,8 +1,9 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import { NavbarMenu } from "../../../mockData/data";
 
-const ResponsiveMenu = ({ open, setOpen, onSignInClick, onSignUpClick }) => {
+const ResponsiveMenu = ({ open, setOpen, onSignInClick, onSignUpClick, isAuthenticated, onLogoutClick }) => {
     const handleMenuItemClick = () => {
         setOpen(false);
     };
@@ -14,6 +15,11 @@ const ResponsiveMenu = ({ open, setOpen, onSignInClick, onSignUpClick }) => {
 
     const handleSignUpClick = () => {
         onSignUpClick();
+        setOpen(false);
+    };
+
+    const handleLogoutClick = () => {
+        onLogoutClick();
         setOpen(false);
     };
 
@@ -29,38 +35,52 @@ const ResponsiveMenu = ({ open, setOpen, onSignInClick, onSignUpClick }) => {
                 >
                     <div className="container py-6">
                         <ul className="flex flex-col gap-4 mb-6">
-                            {NavbarMenu.map((item) => (
-                                <li key={item.id}>
-                                    <a
-                                        href={item.link}
-                                        onClick={handleMenuItemClick}
-                                        className="block py-2 px-4 text-[#5e4a3a] hover:text-[#9aac7f] 
-                                                 font-semibold transition-all duration-300 hover:bg-[#9aac7f]/10 
-                                                 rounded-lg"
-                                    >
-                                        {item.title}
-                                    </a>
-                                </li>
-                            ))}
+                            {isAuthenticated &&
+                                NavbarMenu.map((item) => (
+                                    <li key={item.id}>
+                                        <Link
+                                            to={item.link}
+                                            onClick={handleMenuItemClick}
+                                            className="block py-2 px-4 text-[#5e4a3a] hover:text-[#9aac7f] 
+                                                     font-semibold transition-all duration-300 hover:bg-[#9aac7f]/10 
+                                                     rounded-lg"
+                                        >
+                                            {item.title}
+                                        </Link>
+                                    </li>
+                                ))}
                         </ul>
 
                         <div className="flex flex-col gap-3 px-4">
-                            <button
-                                onClick={handleSignInClick}
-                                className="w-full py-3 text-[#5e4a3a] hover:text-[#9aac7f] 
-                                         font-semibold transition-all duration-300 hover:bg-[#9aac7f]/10 
-                                         rounded-lg border border-[#5e4a3a] hover:border-[#9aac7f]"
-                            >
-                                Sign in
-                            </button>
-                            <button
-                                onClick={handleSignUpClick}
-                                className="w-full py-3 bg-[#9aac7f] text-white rounded-lg 
-                                         hover:bg-[#5e4a3a] transition-all duration-300 
-                                         shadow-md hover:shadow-lg font-semibold"
-                            >
-                                Get Started
-                            </button>
+                            {!isAuthenticated ? (
+                                <>
+                                    <button
+                                        onClick={handleSignInClick}
+                                        className="w-full py-3 text-[#5e4a3a] hover:text-[#9aac7f] 
+                                                 font-semibold transition-all duration-300 hover:bg-[#9aac7f]/10 
+                                                 rounded-lg border border-[#5e4a3a] hover:border-[#9aac7f]"
+                                    >
+                                        Sign in
+                                    </button>
+                                    <button
+                                        onClick={handleSignUpClick}
+                                        className="w-full py-3 bg-[#9aac7f] text-white rounded-lg 
+                                                 hover:bg-[#5e4a3a] transition-all duration-300 
+                                                 shadow-md hover:shadow-lg font-semibold"
+                                    >
+                                        Get Started
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={handleLogoutClick}
+                                    className="w-full py-3 bg-[#9aac7f] text-white rounded-lg 
+                                             hover:bg-[#5e4a3a] transition-all duration-300 
+                                             shadow-md hover:shadow-lg font-semibold"
+                                >
+                                    Logout
+                                </button>
+                            )}
                         </div>
                     </div>
                 </motion.div>
