@@ -116,7 +116,7 @@ const Users = () => {
                                         Loading...
                                     </td>
                                 </tr>
-                            ) : users.length === 0 ? (
+                            ) : (users ?? []).length === 0 ? (
                                 <tr>
                                     <td colSpan="4" className="text-center py-4">
                                         No users found.
