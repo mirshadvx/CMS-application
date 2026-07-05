@@ -176,7 +176,15 @@ class ContentCategorySerializer(serializers.ModelSerializer):
     
 class UserProfieSerialzier(serializers.ModelSerializer):
     interests = ContentCategorySerializer(many=True, read_only=True)
+    interest_ids = serializers.PrimaryKeyRelatedField(
+        source='interests',
+        queryset=ContentCategory.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )
+
     class Meta:
         model = Profile
-        fields = ['id', 'email', 'bio', 'profile_picture', 'interests', 'first_name', 'dateOfBirth']
+        fields = ['id', 'email', 'bio', 'profile_picture', 'interests', 'interest_ids', 'first_name', 'dateOfBirth']
         read_only_fields = ['id', 'email']
