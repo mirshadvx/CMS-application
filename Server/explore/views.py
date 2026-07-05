@@ -5,17 +5,25 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from users.models import BlogPost, BlogLike, Comment
 from .serializers import BlogExploreSerializer, BlogPostDetailSerializer, CommentSerializer
 from .filters import BlogPostFilter
-from django.db.models import Count
+from django.db.models import Count, Case, When, Value, BooleanField
 from .pagination import *
 
-class BlogExploretListView(APIView):
+class BlogExploreListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
+            user_interests = list(request.user.interests.values_list('id', flat=True))
             queryset = BlogPost.objects.filter(status='published', show=True).annotate(
                 likes_count=Count('likes'),
-                comments_count=Count('comments') )
+                comments_count=Count('comments'),
+                is_interested=Case(
+                    When(category__id__in=user_interests, then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField()
+                ))
+            
+            queryset = queryset.order_by('-is_interested', '-published_date')
 
             filterset = BlogPostFilter(request.GET, queryset=queryset)
             if not filterset.is_valid():
