@@ -103,3 +103,13 @@ class UserProfilDetails(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': "Failed to load account details"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        try:
+            serializer = UserProfieSerialzier(request.user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': "Failed to update account details"}, status=status.HTTP_400_BAD_REQUEST)

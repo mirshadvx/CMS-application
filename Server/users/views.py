@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from cms_project.Loggin.logger import logger
 from .filters import BlogPostFilter
 from django.db.models import Count
+from .pagination import UserBlogPostPagination
 
 class ContentList(APIView):
     authentication_classes = []
@@ -36,19 +37,38 @@ class UserBlogListView(APIView):
     
     def get(self, request):
         try:
-            queryset = BlogPost.objects.filter(author=request.user)
+            queryset = BlogPost.objects.filter(author=request.user).select_related('category')
+            queryset = queryset.annotate(
+                likes_count=Count('likes', distinct=True),
+                comments_count=Count('comments', distinct=True)
+            )
+
+            count_params = request.GET.copy()
+            count_params.pop('status', None)
+            count_params.pop('page', None)
+            count_params.pop('page_size', None)
+            count_params.pop('sort_by', None)
+            count_filterset = BlogPostFilter(count_params, queryset=queryset)
+            if not count_filterset.is_valid():
+                return Response(count_filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            status_counts = {
+                'published': 0,
+                'draft': 0,
+            }
+            for item in count_filterset.qs.values('status').annotate(total=Count('id')):
+                status_counts[item['status']] = item['total']
             
             filterset = BlogPostFilter(request.GET, queryset=queryset)
-            if filterset.is_valid():
-                queryset = filterset.qs
-                
-            queryset = queryset.annotate(
-                likes_count=Count('likes'),
-                comments_count=Count('comments')
-            )
+            if not filterset.is_valid():
+                return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
             
-            serializer = BlogPostListSerializer(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            paginator = UserBlogPostPagination()
+            paginated_queryset = paginator.paginate_queryset(filterset.qs, request)
+            serializer = BlogPostListSerializer(paginated_queryset, many=True)
+            response = paginator.get_paginated_response(serializer.data)
+            response.data['status_counts'] = status_counts
+            return response
         except Exception as e:
             return Response(
                 {'error': 'Failed to fetch user blogs.', 'message': str(e)},

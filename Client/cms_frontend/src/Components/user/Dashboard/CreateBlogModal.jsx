@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import { X, Save, Globe, RotateCcw, RotateCw, Image as ImageIcon } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -12,6 +12,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
     const quillRef = useRef(null);
     const thumbnailInputRef = useRef(null);
     const scrollContainerRef = useRef(null);
+    const scrollPositionRef = useRef(0);
     const [tagInput, setTagInput] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -42,17 +43,18 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
         fetchCategories();
     }, []);
 
-    const handleEditorFocus = () => {
+
+    const handleContainerScroll = () => {
         if (scrollContainerRef.current) {
-            scrollContainerRef.current.style.overflowY = "hidden";
+            scrollPositionRef.current = scrollContainerRef.current.scrollTop;
         }
     };
 
-    const handleEditorBlur = () => {
+    useLayoutEffect(() => {
         if (scrollContainerRef.current) {
-            scrollContainerRef.current.style.overflowY = "auto";
+            scrollContainerRef.current.scrollTop = scrollPositionRef.current;
         }
-    };
+    }, [newBlog.content]);
 
     const resetForm = () => {
         setNewBlog({
@@ -65,6 +67,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
             status: "draft",
         });
         setTagInput("");
+        scrollPositionRef.current = 0;
     };
 
     const undoChange = () => {
@@ -75,7 +78,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
         quillRef.current?.getEditor()?.history.redo();
     };
 
-    const handleImageUpload = async () => {
+    const handleImageUpload = useCallback(() => {
         const input = document.createElement("input");
         input.setAttribute("type", "file");
         input.setAttribute("accept", "image/*");
@@ -98,7 +101,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
                 setIsUploading(false);
             }
         };
-    };
+    }, [showError]);
 
     const handleThumbnailUpload = async (e) => {
         const file = e.target.files[0];
@@ -124,7 +127,7 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
         if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
     };
 
-    const modules = {
+    const modules = useMemo(() => ({
         toolbar: {
             container: [
                 [{ header: [1, 2, 3, 4, 5, 6, false] }],
@@ -141,16 +144,18 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
             handlers: { image: handleImageUpload },
         },
         history: { delay: 1000, maxStack: 100, userOnly: true },
-    };
+    }), [handleImageUpload]);
 
-    const formats = [
+    const formats = useMemo(() => [
         "header", "bold", "italic", "underline", "strike", "color", "background",
         "script", "blockquote", "list", "indent", "align", "link", "image"
-    ];
+    ], []);
 
     const handleContentChange = (content) => {
-        const cleanContent = DOMPurify.sanitize(content);
-        setNewBlog(prev => ({ ...prev, content: cleanContent }));
+        if (scrollContainerRef.current) {
+            scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+        }
+        setNewBlog(prev => ({ ...prev, content }));
     };
 
     const handleTagsChange = (e) => {
@@ -187,13 +192,15 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
         try {
             const selectedCategory = categories.find(cat => cat.name === newBlog.category);
             if (!selectedCategory) throw new Error("Category not found");
+            const cleanContent = DOMPurify.sanitize(newBlog.content);
 
             const blogData = {
                 ...newBlog,
+                content: cleanContent,
                 category: selectedCategory.id,
                 status,
-                wordCount: newBlog.content.replace(/<[^>]*>/g, "").split(" ").filter(Boolean).length,
-                readTime: Math.ceil(newBlog.content.replace(/<[^>]*>/g, "").split(" ").length / 200),
+                wordCount: cleanContent.replace(/<[^>]*>/g, "").split(" ").filter(Boolean).length,
+                readTime: Math.ceil(cleanContent.replace(/<[^>]*>/g, "").split(" ").length / 200),
             };
 
             const response = await api.post("user/blogs/create/", blogData);
@@ -276,9 +283,9 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
                     </div>
                 </div>
 
-                {/* Scrollable Content */}
                 <div
                     ref={scrollContainerRef}
+                    onScroll={handleContainerScroll}
                     className="flex-1 overflow-y-auto p-6 space-y-6"
                 >
                     <div className="space-y-4">
@@ -396,8 +403,6 @@ const CreateBlogModal = ({ showCreateModal, setShowCreateModal, onBlogCreated })
                                 theme="snow"
                                 value={newBlog.content}
                                 onChange={handleContentChange}
-                                onFocus={handleEditorFocus}
-                                onBlur={handleEditorBlur}
                                 modules={modules}
                                 formats={formats}
                                 placeholder="Write your amazing blog content here..."
